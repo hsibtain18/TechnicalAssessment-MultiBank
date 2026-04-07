@@ -18,6 +18,16 @@ describe('Ticker API Integration Tests', () => {
     expect(res.body.length).toBeGreaterThan(0);
   });
 
+  test('GET /api/tickers/history/:symbol - Success', async () => {
+    const res = await request(app).get('/api/tickers/history/aapl');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
 
+  test('GET /api/tickers/history/:symbol - 404 Not Found', async () => {
+    const res = await request(app).get('/api/tickers/history/NONEXISTENT');
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toHaveProperty('error', 'History not found');
+  });
 
 });
