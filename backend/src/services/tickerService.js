@@ -1,4 +1,4 @@
-export const generatePriceUpdate = (currentTicker) => {
+const generatePriceUpdate = (currentTicker) => {
   const move = (Math.random() - 0.5) * 2;
   return {
     symbol: currentTicker.symbol,
@@ -8,4 +8,6 @@ export const generatePriceUpdate = (currentTicker) => {
   };
 };
 
-export const getRandomDelay = () => Math.floor(Math.random() * (2000 - 100) + 100);
+const getRandomDelay = () => Math.floor(Math.random() * (2000 - 100) + 100);
+
+module.exports = { generatePriceUpdate, getRandomDelay };
