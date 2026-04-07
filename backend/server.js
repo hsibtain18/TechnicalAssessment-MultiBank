@@ -14,24 +14,36 @@ const wss = new WebSocketServer({ server });
 app.use('/api/tickers', tickerRoutes);
 
 wss.on('connection', (ws) => {
-  console.log('Client connected for live updates');
+    let timeoutId = null;
 
-  const interval = setInterval(() => {
-    const ticker = tickers[Math.floor(Math.random() * tickers.length)];
+    ws.on('message', (message) => {
+        const data = JSON.parse(message);
 
-    const update = {
-      symbol: ticker.symbol,
-      price: (ticker.price + (Math.random() - 0.5) * 2).toFixed(2),
-      change: (Math.random() * 2 - 1).toFixed(2),
-      timestamp: new Date().toLocaleTimeString()
-    };
+        if (data.type === 'SUBSCRIBE') {
+            if (timeoutId) clearTimeout(timeoutId);
 
-    if (ws.readyState === 1) {
-      ws.send(JSON.stringify(update));
-    }
-  }, 2000);
+            const sendUpdate = () => {
+                const update = {
+                    symbol: data.symbol,
+                    price: (Number(data.price) + (Math.random() - 0.5) * 2).toFixed(2),
+                    change: (Math.random() * 2 - 1).toFixed(2),
+                    timestamp: new Date().toLocaleTimeString([], { hour12: false })
+                };
 
-  ws.on('close', () => clearInterval(interval));
+                if (ws.readyState === 1) {
+                    ws.send(JSON.stringify(update));
+                    const nextTick = Math.floor(Math.random() * (2000 - 100) + 100);
+                    timeoutId = setTimeout(sendUpdate, nextTick);
+                }
+            };
+
+            sendUpdate();
+        }
+    });
+
+    ws.on('close', () => {
+        if (timeoutId) clearTimeout(timeoutId);
+    });
 });
 
 const PORT = 4000;

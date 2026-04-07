@@ -5,34 +5,32 @@ import type { Ticker, TickerHistory } from '../../types/market.types';
 import { apiService } from '../../services/api.service';
 
 const Dashboard = () => {
-    // Define state with your interfaces
     const [tickers, setTickers] = useState<Ticker[]>([]);
     const [activeTicker, setActiveTicker] = useState<Ticker | null>(null);
     const [history, setHistory] = useState<TickerHistory[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:4000');
+        const socket = new WebSocket('ws://127.0.0.1:4000');
 
+        socket.onopen = () => {
+            if (activeTicker?.symbol) {
+                socket.send(JSON.stringify({
+                    type: 'SUBSCRIBE',
+                    symbol: activeTicker.symbol,
+                    price: activeTicker.price
+                }));
+            }
+        };
         socket.onmessage = (event) => {
             const update = JSON.parse(event.data);
-
-            // Use functional update to check against the CURRENTLY selected ticker
             setActiveTicker((current) => {
-                // 1. Filter: If update is for a different ticker, ignore it
                 if (current && current.symbol === update.symbol) {
-
-                    // 2. Append Logic: Create new point and update history state
                     const newPoint = {
                         time: update.timestamp,
                         price: Number(update.price)
                     };
+                    setHistory((prev) => [...prev, newPoint]);
 
-                    setHistory((prev) => {
-                        const updated = [...prev, newPoint];
-                        return updated.slice(-50); // Keep only last 50 points for performance
-                    });
-
-                    // 3. Update the Header/Price Display
                     return {
                         ...current,
                         price: Number(update.price),
@@ -43,8 +41,13 @@ const Dashboard = () => {
             });
         };
 
-        return () => socket.close();
-    }, []);
+        return () => {
+            if (socket.readyState === 1) socket.close();
+        };
+    }, [activeTicker?.symbol]); 
+    // Re-run WebSocket connection logic when activeTicker's symbol changes, ensuring we subscribe to the correct ticker updates
+    // This also means we won't attempt to subscribe until we have a valid symbol from the active ticker, preventing unnecessary WebSocket connections on initial load when activeTicker is null.
+
     useEffect(() => {
         apiService.getAllTickers().then((data: Ticker[]) => {
             setTickers(data);
@@ -102,12 +105,10 @@ const Dashboard = () => {
                     <main className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="p-8 border-b border-slate-100 flex justify-between items-end">
                             <div>
-                                {/* TS now knows activeTicker has 'symbol' and 'name' */}
                                 <h2 className="text-5xl font-black leading-none">{activeTicker.symbol}</h2>
                                 <p className="text-slate-400 mt-2 font-medium">{activeTicker.name}</p>
                             </div>
                             <div className="text-right">
-                                {/* TS now knows 'price' exists and is a number */}
                                 <p className="text-4xl font-mono font-bold tracking-tighter">
                                     ${activeTicker.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </p>
@@ -118,7 +119,7 @@ const Dashboard = () => {
                         </div>
 
                         <div className="flex-1 p-6">
-                            <LineCharts ticker={{ ...activeTicker, history }} />
+                           <LineCharts ticker={activeTicker} history={history} />
                         </div>
                     </main>
                 </div>
