@@ -1,69 +1,34 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LineCharts from '../Charts/LineCharts';
 import { TickerList } from './TickerList';
-import type { Ticker, TickerHistory } from '../../types/market.types';
+import type { Ticker } from '../../types/market.types';
 import { apiService } from '../../services/api.service';
+import { useTickerData } from '../../hooks/useTickerData';
 
 const Dashboard = () => {
     const [tickers, setTickers] = useState<Ticker[]>([]);
-    const [activeTicker, setActiveTicker] = useState<Ticker | null>(null);
-    const [history, setHistory] = useState<TickerHistory[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    useEffect(() => {
-        const socket = new WebSocket('ws://127.0.0.1:4000');
+    const [selectedTicker, setSelectedTicker] = useState<Ticker | null>(null);
 
-        socket.onopen = () => {
-            if (activeTicker?.symbol) {
-                socket.send(JSON.stringify({
-                    type: 'SUBSCRIBE',
-                    symbol: activeTicker.symbol,
-                    price: activeTicker.price
-                }));
-            }
-        };
-        socket.onmessage = (event) => {
-            const update = JSON.parse(event.data);
-            setActiveTicker((current) => {
-                if (current && current.symbol === update.symbol) {
-                    const newPoint = {
-                        time: update.timestamp,
-                        price: Number(update.price)
-                    };
-                    setHistory((prev) => [...prev, newPoint]);
+   
+    const handleTickerUpdate = (updatedData: any) => {
+        setTickers((currentTickers) =>
+            currentTickers.map((t) =>
+                t.symbol === updatedData.symbol
+                    ? { ...t, price: updatedData.price, change: updatedData.change }
+                    : t
+            )
+        );
+    };
 
-                    return {
-                        ...current,
-                        price: Number(update.price),
-                        change: Number(update.change)
-                    };
-                }
-                return current;
-            });
-        };
-
-        return () => {
-            if (socket.readyState === 1) socket.close();
-        };
-    }, [activeTicker?.symbol]); 
-    // Re-run WebSocket connection logic when activeTicker's symbol changes, ensuring we subscribe to the correct ticker updates
-    // This also means we won't attempt to subscribe until we have a valid symbol from the active ticker, preventing unnecessary WebSocket connections on initial load when activeTicker is null.
-
+    const { liveTicker, history } = useTickerData(selectedTicker, handleTickerUpdate);
     useEffect(() => {
         apiService.getAllTickers().then((data: Ticker[]) => {
             setTickers(data);
-            if (data.length > 0) setActiveTicker(data[0]);
+            if (data.length > 0) setSelectedTicker(data[0]);
         });
-    }, []); // Fetch tickers on mount
+    }, []);
 
-    useEffect(() => {
-        if (activeTicker?.symbol) {
-            apiService.getTickerHistory(activeTicker.symbol).then((data: TickerHistory[]) => {
-                setHistory(data);
-            });
-        }
-    }, [activeTicker?.symbol]); // Fetch history when active ticker changes afeter we have the symbol
-
-    // Search Filter
     const filteredTickers = useMemo(() => {
         return tickers.filter(t =>
             t.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,9 +36,12 @@ const Dashboard = () => {
         );
     }, [tickers, searchTerm]);
 
-
-    if (!activeTicker) {
-        return <div className="h-screen flex items-center justify-center">Loading Market Data...</div>;
+    if (!liveTicker) {
+        return (
+            <div className="h-screen flex items-center justify-center font-bold text-slate-400">
+                Loading Market Data...
+            </div>
+        );
     }
 
     return (
@@ -91,35 +59,36 @@ const Dashboard = () => {
                         <input
                             type="text"
                             placeholder="Search 50+ assets..."
-                            className="w-full p-3 mb-4 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-600 outline-none"
+                            className="w-full p-3 mb-4 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
 
+                        {/* TickerList will now re-render with live prices from the tickers state */}
                         <TickerList
                             tickers={filteredTickers}
-                            selectedId={activeTicker.id}
-                            onSelect={setActiveTicker}
+                            selectedId={liveTicker.id}
+                            onSelect={setSelectedTicker}
                         />
                     </aside>
 
                     <main className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="p-8 border-b border-slate-100 flex justify-between items-end">
                             <div>
-                                <h2 className="text-5xl font-black leading-none">{activeTicker.symbol}</h2>
-                                <p className="text-slate-400 mt-2 font-medium">{activeTicker.name}</p>
+                                <h2 className="text-5xl font-black leading-none">{liveTicker.symbol}</h2>
+                                <p className="text-slate-400 mt-2 font-medium">{liveTicker.name}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-4xl font-mono font-bold tracking-tighter">
-                                    ${activeTicker.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    ${liveTicker.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </p>
-                                <p className={`text-sm font-bold mt-1 ${activeTicker.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {activeTicker.change >= 0 ? '+' : ''}{activeTicker.change}%
+                                <p className={`text-sm font-bold mt-1 ${liveTicker.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {liveTicker.change >= 0 ? '+' : ''}{liveTicker.change}%
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex-1 p-6">
-                           <LineCharts ticker={activeTicker} history={history} />
+                        <div className="flex-1 p-6 min-h-0">
+                           <LineCharts ticker={liveTicker} history={history} />
                         </div>
                     </main>
                 </div>
