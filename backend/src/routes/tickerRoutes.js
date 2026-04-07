@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { tickers, tickerHistory } = require('../Data/MockData');
+const { tickers, tickerHistory } = require('../../Data/MockData');
 
 router.get('/', (req, res) => {
   res.json(tickers);
