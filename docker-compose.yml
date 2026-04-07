@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-app
+    ports:
+      - "4000:4000"
+    networks:
+      - remote
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - remote
+
+networks:
+  remote:
+    driver: bridge

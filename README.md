@@ -6,27 +6,12 @@ This is a simple project I built to show a live trading dashboard. It uses a Rea
 
 You do NOT need to use Docker for this project. I designed it to run directly on your computer using Node.js.
 
-### 1. Start the Backend
-- Open your terminal and go into the `backend` folder.
-- Run `npm install` to get the packages.
-- Run `npm start` to start the server.
-- The server runs on **port 4000**.
-
-### 2. Start the Frontend
-- Open a second terminal window and go into the `frontend` folder.
-- Run `npm install`.
-- Run `npm run dev`.
-- Follow the link in the terminal (`http://localhost:5173`) to see the dashboard.
-
+### 1. Start the project
+1. Open your terminal in the main folder (`TechnicalAssessment-MultiBank`).
+2. Run this command:
+   ```bash
+   docker compose up --build
 ---
-
-## 🧪 Testing the Code
-
-I included some tests to make sure the math and the API links are working as they should. I used **Jest** for these tests.
-
-**To run the tests:**
-1. Go into the `backend` folder.
-2. Type `npm test`.
 
 **What these tests check:**
 * **The Math:** Makes sure the price movements stay realistic and don't break.
