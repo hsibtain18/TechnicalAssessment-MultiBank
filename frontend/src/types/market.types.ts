@@ -4,7 +4,7 @@ export interface Ticker {
   name: string;
   price: number;
   change: number;
-  timestamp?: string; // Optional for REST, required for WS updates
+  timestamp?: string; 
 }
 
 export interface TickerHistory {

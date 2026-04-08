@@ -1,17 +1,35 @@
 # Trading Dashboard Project
 
-This is a simple project I built to show a live trading dashboard. It uses a React frontend to show stock prices and a Node.js backend to send out those price updates in real-time.
+This is a real-time trading dashboard built with a **React** frontend and a **Node.js** backend. It features live market data updates via WebSockets and secured REST APIs.
 
-## How to Run This (No Docker Needed)
+## 🔐 Security & Authentication
 
-You do NOT need to use Docker for this project. I designed it to run directly on your computer using Node.js.
+This project implements **JWT (JSON Web Token)** for secure communication. The system is fully configured for environment-based security.
 
-### 1. Start the project
-1. Open your terminal in the main folder (`TechnicalAssessment-MultiBank`).
-2. Run this command:
-   ```bash
-   docker compose up --build
----
+### 🔑 Secret Key Generation
+The `JWT_SECRET` used for this project was generated using the following command:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+🛠️ Environment Configuration
+To strictly use the environment variable for testing:
+
+Generate a new key using the command above.
+
+Backend Auth: In backend/src/middleware/auth.js, the code is set to pull from process.env.JWT_SECRET.
+
+Dockerfile: Update the ENV JWT_SECRET in backend/Dockerfile.
+
+Docker Compose: Update the JWT_SECRET value in docker-compose.yml.
+
+
+## 🔐 How to run 
+
+```bash
+docker compose up --build
+
+
+Access the dashboard at http://localhost:5
 
 **What these tests check:**
 * **The Math:** Makes sure the price movements stay realistic and don't break.

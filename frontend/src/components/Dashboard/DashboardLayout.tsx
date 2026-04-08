@@ -9,8 +9,7 @@ const Dashboard = () => {
     const [tickers, setTickers] = useState<Ticker[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTicker, setSelectedTicker] = useState<Ticker | null>(null);
-
-
+    
     const handleTickerUpdate = (updatedData: any) => {
         setTickers((currentTickers) =>
             currentTickers.map((t) =>
